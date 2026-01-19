@@ -20,13 +20,12 @@ public class ConnectionsImpl<T> implements Connections<T> {
 
     private AtomicInteger msgCurrentId = new AtomicInteger(0);
 
-    
     public ConnectionsImpl() {
-        
+
     }
 
     @Override
-    public boolean send(int connectionId, T msg){
+    public boolean send(int connectionId, T msg) {
         if (!handlers.containsKey(connectionId))
             return false;
         msgCurrentId.addAndGet(1);
@@ -35,8 +34,8 @@ public class ConnectionsImpl<T> implements Connections<T> {
     }
 
     @Override
-    public void send(String channel, T msg){
-        if(!channelToSubscribers.containsKey(channel))
+    public void send(String channel, T msg) {
+        if (!channelToSubscribers.containsKey(channel))
             return;
         for (Integer connectionId : channelToSubscribers.get(channel).keySet()) {
             handlers.get(connectionId).send(msg);
@@ -44,23 +43,22 @@ public class ConnectionsImpl<T> implements Connections<T> {
     }
 
     @Override
-    public void disconnect(int connectionId){
+    public void disconnect(int connectionId) {
         // Remove from handlers
         handlers.remove(connectionId);
 
         // Remove from channelToSubscribers
+        // Remove from clientToChannels
         Map<Integer, String> userSubs = clientToChannels.remove(connectionId);
-        if (clientToChannels.containsKey(connectionId)) {
+        if (userSubs != null) {
             for (String channel : userSubs.values()) {
                 if (channelToSubscribers.containsKey(channel)) {
                     channelToSubscribers.get(channel).remove(connectionId);
-                    if (channelToSubscribers.get(channel).isEmpty()) { //if no subscribers left, remove the channel
+                    if (channelToSubscribers.get(channel).isEmpty()) { // if no subscribers left, remove the channel
                         channelToSubscribers.remove(channel);
                     }
                 }
             }
-            // Remove from clientToChannels
-            clientToChannels.remove(connectionId);
         }
     }
 
@@ -76,13 +74,13 @@ public class ConnectionsImpl<T> implements Connections<T> {
         clientToChannels.get(connectionId).put(subscriberId, channel);
     }
 
-    public void unsubscribe(int connectionId, int subscriberId){
+    public void unsubscribe(int connectionId, int subscriberId) {
         Map<Integer, String> userSubs = clientToChannels.get(connectionId);
 
-        if(userSubs != null) {
+        if (userSubs != null) {
             String channel = userSubs.remove(subscriberId);
 
-            if (channel !=null) {
+            if (channel != null) {
                 Map<Integer, Integer> channelSubs = channelToSubscribers.get(channel);
                 if (channelSubs != null) {
                     channelSubs.remove(connectionId);
@@ -98,9 +96,8 @@ public class ConnectionsImpl<T> implements Connections<T> {
         return channelToSubscribers.get(channel);
     }
 
-    public int generateMessageId(){
+    public int generateMessageId() {
         return msgCurrentId.incrementAndGet();
     }
 
-    
 }

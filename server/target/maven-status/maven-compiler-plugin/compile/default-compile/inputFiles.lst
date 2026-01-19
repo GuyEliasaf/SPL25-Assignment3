@@ -3,6 +3,7 @@
 /workspaces/Assignment 3 SPL/server/src/main/java/bgu/spl/net/api/StompMessagingProtocol.java
 /workspaces/Assignment 3 SPL/server/src/main/java/bgu/spl/net/impl/newsfeed/NewsFeed.java
 /workspaces/Assignment 3 SPL/server/src/main/java/bgu/spl/net/impl/data/User.java
+/workspaces/Assignment 3 SPL/server/src/main/java/bgu/spl/net/impl/stomp/StompEncoderDecoder.java
 /workspaces/Assignment 3 SPL/server/src/main/java/bgu/spl/net/impl/echo/EchoServer.java
 /workspaces/Assignment 3 SPL/server/src/main/java/bgu/spl/net/impl/rci/ObjectEncoderDecoder.java
 /workspaces/Assignment 3 SPL/server/src/main/java/bgu/spl/net/srv/Reactor.java

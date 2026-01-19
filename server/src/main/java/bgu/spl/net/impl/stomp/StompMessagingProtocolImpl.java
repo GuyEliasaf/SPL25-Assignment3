@@ -7,6 +7,10 @@ import bgu.spl.net.srv.ConnectionsImpl;
 import java.util.HashMap;
 import java.util.Map;
 
+import bgu.spl.net.impl.data.Database;
+import bgu.spl.net.impl.data.LoginStatus;
+import bgu.spl.net.impl.data.User;
+
 public class StompMessagingProtocolImpl implements StompMessagingProtocol<String> { 
 
     private boolean shouldTerminate = false;
@@ -66,12 +70,33 @@ public void process(String message) {
         String host = headers.get("host");
         String login = headers.get("login");
         String passcode = headers.get("passcode");
-
         if (acceptVersion != null && acceptVersion.contains(String.valueOf(STOMP_VERSION)) && host != null && login != null && passcode != null) {
+        LoginStatus status = Database.getInstance().login(connectionId, login, passcode);
+
+        switch (status) {
+        case LOGGED_IN_SUCCESSFULLY:
+        case ADDED_NEW_USER:
             isLoggedIn = true;
             String response = "CONNECTED\nversion:" + STOMP_VERSION + "\n";
             connections.send(connectionId, response);
-        } else {
+            break;
+
+        case WRONG_PASSWORD:
+            sendError("Wrong password", "Password does not match", null);
+            break;
+
+        case ALREADY_LOGGED_IN:
+            sendError("User already logged in", "User is already logged in", null);
+            break;
+            
+        case CLIENT_ALREADY_CONNECTED:
+             break;
+    }
+
+        
+            
+        }
+        else {
             sendError("Malformed Frame", "Invalid CONNECT frame parameters", null);
         }
     }
@@ -156,8 +181,8 @@ public void process(String message) {
         Map<String, String> headers = parseHeaders(lines);
         String receipt = headers.get("receipt");
         
+        Database.getInstance().logout(connectionId);
         handleReceipt(receipt);
-        
         shouldTerminate = true;
         isLoggedIn = false;
         connections.disconnect(connectionId);
