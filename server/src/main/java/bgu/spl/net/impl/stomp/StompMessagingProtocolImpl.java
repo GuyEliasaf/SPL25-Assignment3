@@ -18,6 +18,7 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
     private Connections<String> connections;
     private final double STOMP_VERSION = 1.2;
     private boolean isLoggedIn = false;
+    private String currentUser = null; //username
 
     @Override
     public void start(int connectionId, Connections<String> connections) {
@@ -77,6 +78,7 @@ public void process(String message) {
         case LOGGED_IN_SUCCESSFULLY:
         case ADDED_NEW_USER:
             isLoggedIn = true;
+            this.currentUser = login;
             String response = "CONNECTED\nversion:" + STOMP_VERSION + "\n";
             connections.send(connectionId, response);
             break;
@@ -106,6 +108,7 @@ public void process(String message) {
         String destination = headers.get("destination");
         String body = headers.get("body");
         String receipt = headers.get("receipt"); 
+        String filename = headers.get("file");
 
         if(destination == null || body == null) {
              sendError("Malformed Frame", "Missing destination or body", receipt);
@@ -119,6 +122,10 @@ public void process(String message) {
             return;
         }
         
+        if (filename != null && currentUser != null) {
+            Database.getInstance().trackFileUpload(currentUser, filename, destination);
+        }
+
         int messageId = ((ConnectionsImpl<String>) connections).generateMessageId();
         for(Map.Entry<Integer, Integer> entry : subscribers.entrySet()){
             int targetConnId = entry.getKey();

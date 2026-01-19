@@ -1,5 +1,7 @@
 package bgu.spl.net.impl.stomp;
 
+import bgu.spl.net.impl.data.Database;
+
 public class StompServer {
 
     public static void main(String[] args) {
@@ -10,6 +12,11 @@ public class StompServer {
 
         int port = Integer.parseInt(args[0]);
         String mode = args[1];
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> { //addShutdownHook similar to finally
+        System.out.println("Server is shutting down. Generating Report:");
+        Database.getInstance().printReport();
+        }));
 
         bgu.spl.net.srv.Server<String> server;
 

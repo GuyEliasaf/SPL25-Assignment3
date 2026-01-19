@@ -19,14 +19,6 @@ import atexit
 SERVER_NAME = "STOMP_PYTHON_SQL_SERVER"  # DO NOT CHANGE!
 DB_FILE = "stomp_server.db"              # DO NOT CHANGE!
 
-_conn = sqlite3.connect(DB_FILE)
-
-
-def _close_db():
-    _conn.commit()
-    _conn.close()
-
-atexit.register(_close_db)
 
 def recv_null_terminated(sock: socket.socket) -> str:
     data = b""
@@ -41,39 +33,49 @@ def recv_null_terminated(sock: socket.socket) -> str:
 
 
 def init_database():
-    _conn.executescript("""
-        CREATE TABLE IF NOT EXISTS users (
-            username TEXT PRIMARY KEY,
-            password TEXT NOT NULL,
-            registration_date TEXT NOT NULL
-        );
+    _conn = sqlite3.connect(DB_FILE)
+    try:
+        _conn.executescript("""
+            CREATE TABLE IF NOT EXISTS users (
+                username TEXT PRIMARY KEY,
+                password TEXT NOT NULL,
+                registration_date TEXT NOT NULL
+            );
 
-        CREATE TABLE IF NOT EXISTS login_history (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT NOT NULL,
-            login_time TEXT NOT NULL,
-            logout_time TEXT,
-            FOREIGN KEY(username) REFERENCES users(username)
-        );
+            CREATE TABLE IF NOT EXISTS login_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL,
+                login_time TEXT NOT NULL,
+                logout_time TEXT,
+                FOREIGN KEY(username) REFERENCES users(username)
+            );
 
-        CREATE TABLE IF NOT EXISTS file_tracking (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            filename TEXT NOT NULL,
-            username TEXT NOT NULL,
-            upload_time TEXT NOT NULL,
-            game_channel TEXT NOT NULL,
-            FOREIGN KEY(username) REFERENCES users(username)
-        );
-    """)
-    _conn.commit()
+            CREATE TABLE IF NOT EXISTS file_tracking (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                filename TEXT NOT NULL,
+                username TEXT NOT NULL,
+                upload_time TEXT NOT NULL,
+                game_channel TEXT NOT NULL,
+                FOREIGN KEY(username) REFERENCES users(username)
+            );
+        """)
+        _conn.commit()
+    finally:
+        _conn.close()
 
 
 def execute_sql_command(sql_command: str) -> str:
-    _conn.execute(sql_command)
-    _conn.commit()
-    return "done"
+    _conn = sqlite3.connect(DB_FILE)
+
+    try:
+        _conn.execute(sql_command)
+        _conn.commit()
+        return "done"
+    finally:
+        _conn.close()
 
 def execute_sql_query(sql_query: str) -> str:
+    _conn = sqlite3.connect(DB_FILE)
     try:
         cursor = _conn.cursor()
         cursor.execute(sql_query)
@@ -88,6 +90,8 @@ def execute_sql_query(sql_query: str) -> str:
     except Exception as e:
         print(f"Query Error: {e}")
         return f"ERROR: {str(e)}"
+    finally:
+        _conn.close()
 
 
 def handle_client(client_socket: socket.socket, addr):
@@ -102,7 +106,7 @@ def handle_client(client_socket: socket.socket, addr):
             print(f"[{SERVER_NAME}] Received:")
             print(message)
 
-            if(message[0:5] == "SELECT"):
+            if(message[0:6] == "SELECT"):
                 response = execute_sql_query(message)
             else:
                 response = execute_sql_command(message)
