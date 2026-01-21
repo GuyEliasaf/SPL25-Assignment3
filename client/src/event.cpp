@@ -61,8 +61,79 @@ const std::string &Event::get_discription() const
     return this->description;
 }
 
-Event::Event(const std::string &frame_body) : team_a_name(""), team_b_name(""), name(""), time(0), game_updates(), team_a_updates(), team_b_updates(), description("")
+Event::Event(const std::string & frame_body) : team_a_name(""), team_b_name(""), name(""), time(0), game_updates(), team_a_updates(), team_b_updates(), description("")
 {
+    std::stringstream ss(frame_body);
+    std::string line;
+    std::string current_map = ""; 
+
+    while (std::getline(ss, line)) {
+        
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+
+        
+        if (line.find("user:") == 0) {
+            continue;
+        }
+
+        
+        if (line.find("team a:") == 0) {
+            team_a_name = line.substr(7); 
+            continue;
+        }
+        if (line.find("team b:") == 0) {
+            team_b_name = line.substr(7); 
+            continue;
+        }
+        if (line.find("event name:") == 0) {
+            name = line.substr(11); 
+            continue;
+        }
+        if (line.find("time:") == 0) {
+            try {
+                time = std::stoi(line.substr(5)); 
+            } catch (...) { time = 0; } 
+            continue;
+        }
+
+        if (line == "general game updates:") {
+            current_map = "general";
+            continue;
+        }
+        if (line == "team a updates:") {
+            current_map = "team_a";
+            continue;
+        }
+        if (line == "team b updates:") {
+            current_map = "team_b";
+            continue;
+        }
+        if (line == "description:") {
+            current_map = "description";
+            continue; 
+        }
+
+        if (current_map == "description") {
+            description += line + "\n";
+        }
+        else if (current_map != "") {
+            size_t colon_pos = line.find(':');
+            if (colon_pos != std::string::npos) {
+                std::string key = line.substr(0, colon_pos);
+                std::string value = line.substr(colon_pos + 1);
+                
+                if (value.size() > 0 && value[0] == ' ') value = value.substr(1);
+
+                if (current_map == "general") {
+                    game_updates[key] = value;
+                } else if (current_map == "team_a") {
+                    team_a_updates[key] = value;
+                } else if (current_map == "team_b") {
+                    team_b_updates[key] = value;
+                }
+            }
+        }
+    }
 }
 
 names_and_events parseEventsFile(std::string json_path)
