@@ -43,6 +43,17 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
             ex.printStackTrace();
         }
 
+        finally {// close connection and protocol if needed (when terminated)
+            if (protocol instanceof bgu.spl.net.impl.stomp.StompMessagingProtocolImpl) { 
+                ((bgu.spl.net.impl.stomp.StompMessagingProtocolImpl) protocol).close();
+        }
+            try {
+                close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
     }
 
     @Override

@@ -257,4 +257,12 @@ public void process(String message) {
             shouldTerminate = true;
             connections.disconnect(connectionId);
     }
+    // Called when the connection is closed
+    public void close() {
+        if (isLoggedIn) {
+            System.out.println("Closing connection for user: " + currentUser);
+            Database.getInstance().logout(connectionId);
+            isLoggedIn = false;
+        }
+}
 }

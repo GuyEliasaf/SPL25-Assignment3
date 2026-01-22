@@ -69,6 +69,9 @@ public class NonBlockingConnectionHandler<T> implements ConnectionHandler<T> {
     }
 
     public void close() {
+        if (protocol instanceof bgu.spl.net.impl.stomp.StompMessagingProtocolImpl) { //close protocol if needed (when terminated)
+            ((bgu.spl.net.impl.stomp.StompMessagingProtocolImpl) protocol).close();
+        }
         try {
             reactor.getConnections().disconnect(connectionId);
             chan.close();
